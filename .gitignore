@@ -1,0 +1,16 @@
+# Downloaded media and generated indexes. corpus.csv holds the URLs instead.
+data/
+*.mp4
+*.webm
+*.pdf
+*.onnx
+*.tar.gz
+
+# Secrets
+.env
+
+# Python / Jupyter
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
