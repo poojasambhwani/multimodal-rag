@@ -9,8 +9,8 @@ p7,What advantages of self-hosting are highlighted for smaller specialized model
 p8,What does the slide say Paddler is being used to build next?,PD8WGF,12:34,13:24,slide
 p9,What is the name of the static-analysis project built on top of Paddler?,PD8WGF,13:08,13:33,name
 p10,What research project did the team use when looking for a way to represent systems and applications?,PD8WGF,15:40,16:06,name
-p11,How does the team explain the role of self-hosting in Poet, and where does the slide illustrate that motivation?,PD8WGF,14:00,14:52,both
-p11,How does the team explain the role of self-hosting in Poet, and where does the slide illustrate that motivation?,PD8WGF,14:00,14:51,both
+p11,How does the team explain the role of self-hosting in Poet?,PD8WGF,14:00,14:52,both
+p11,How does the team explain the role of self-hosting in Poet?,PD8WGF,14:00,14:51,both
 p12,How does the presentation connect self-hosted models and grammars with improved model output?,PD8WGF,16:06,16:55,both
 p12,How does the presentation connect self-hosted models and grammars with improved model output?,PD8WGF,16:19,17:28,both
 n1,Why can't a conventional retrieval system simply provide the entire knowledge base to the language model?,NHNPMY,1:43,2:12,speech
