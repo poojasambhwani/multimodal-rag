@@ -1,10 +1,9 @@
-"""Fusion search over three indexes: speech chunks, slide text, and slide images (CLIP).
+"""Fusion search over two indexes: speech chunks and slide text (the VLM's reading + description).
 
-Scores from different embedding models aren't comparable (on this corpus CLIP cosines sit
-around 0.2-0.35, bge around 0.55-0.8), so ranked lists are fused by position with Reciprocal
-Rank Fusion.
+Ranked lists are fused by position with Reciprocal Rank Fusion. A CLIP index on the slide images was
+evaluated and dropped: on the dev set it didn't improve R@10 or MRR over speech + slide text.
 """
-SOURCES = ("speech", "slide_text", "slide_clip")
+SOURCES = ("speech", "slide_text")
 RRF_K = 60  # the standard RRF constant: softens the gap between rank 1 and rank 2
 
 
@@ -18,8 +17,8 @@ def retrieve(query, source, n=10):
         cols = dict(start=t.segment_start, end=t.segment_end, text=t.text)
     else:
         t = pxt.get_table("mmrag.keyframes")
-        sim = (t.slide_doc if source == "slide_text" else t.slide).similarity(string=query)
-        cols = dict(start=t.start_time, end=t.start_time + t.duration, text=t.slide_text)
+        sim = t.slide_doc.similarity(string=query)
+        cols = dict(start=t.start_time, end=t.start_time + t.duration, text=t.slide_doc)
     df = t.order_by(sim, asc=False).limit(n).select(t.talk_id, t.title, **cols).collect().to_pandas()
     return [dict(row, source=source, rank=i + 1) for i, row in enumerate(df.to_dict("records"))]
 

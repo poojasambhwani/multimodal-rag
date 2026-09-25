@@ -1,0 +1,78 @@
+"""Grounded answers: GPT-4o-mini answers only from the retrieved moments and cites them by number."""
+import csv
+import json
+from functools import cache
+from pathlib import Path
+
+from mmrag.search import search
+
+CORPUS_CSV = Path(__file__).resolve().parent.parent / "corpus.csv"
+MODEL = "gpt-4o-mini"
+
+SYSTEM_PROMPT = """You answer questions about recorded conference talks using ONLY the numbered context moments.
+Each moment gives what the speaker said and/or the slide on screen (its text and a description).
+Rules:
+- Use only facts stated in the context, never outside knowledge.
+- Cite the moment numbers that support the answer.
+- If the context does not contain the answer, set status to INSUFFICIENT_CONTEXT and say briefly what is missing.
+Reply with a JSON object: {"status": "OK" or "INSUFFICIENT_CONTEXT", "answer": "...", "citations": [moment numbers]}"""
+
+
+@cache
+def video_url(talk_id):
+    with open(CORPUS_CSV, newline="", encoding="utf-8") as f:
+        return {r["id"]: r["video_url"] for r in csv.DictReader(f)}[talk_id]
+
+
+def mmss(t):
+    m, s = divmod(int(t), 60)
+    return f"{m}:{s:02d}"
+
+
+def build_context(moments):
+    """Numbered context blocks, one per moment: title, time range, what was said, what the slide showed."""
+    blocks = []
+    for i, m in enumerate(moments, 1):
+        lines = [f'[{i}] "{m["title"]}" {mmss(m["start"])}-{mmss(m["end"])}']
+        if "speech" in m["texts"]:
+            lines.append(f'Said: {m["texts"]["speech"]}')
+        if "slide_text" in m["texts"]:
+            lines.append(f'Slide: {m["texts"]["slide_text"]}')
+        blocks.append("\n".join(lines))
+    return "\n\n".join(blocks)
+
+
+def parse_reply(content, moments):
+    """Model JSON -> {status, answer, citations: [{n, talk_id, title, start, end, url}]}.
+    Citation numbers outside 1..len(moments) are dropped, never trusted."""
+    try:
+        reply = json.loads(content)
+    except json.JSONDecodeError:
+        return {"status": "ERROR", "answer": content, "citations": []}
+    nums = [n for n in reply.get("citations", []) if isinstance(n, int) and 1 <= n <= len(moments)]
+    citations = []
+    for n in dict.fromkeys(nums):  # de-duplicate, keep order
+        m = moments[n - 1]
+        citations.append({"n": n, "talk_id": m["talk_id"], "title": m["title"], "start": m["start"], "end": m["end"],
+                          "url": f'{video_url(m["talk_id"])}#t={int(m["anchor"])}'})
+    return {"status": reply.get("status", "ERROR"), "answer": reply.get("answer", ""), "citations": citations}
+
+
+def answer(question, k=10, client=None):
+    """Retrieve the top-k moments, ask the model, return the parsed reply plus the moments and token usage."""
+    from openai import OpenAI  # imported here so the pure functions above are testable without it
+
+    moments = search(question, k=k)
+    resp = (client or OpenAI()).chat.completions.create(
+        model=MODEL,
+        temperature=0,
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": f"Context moments:\n\n{build_context(moments)}\n\nQuestion: {question}"},
+        ],
+    )
+    out = parse_reply(resp.choices[0].message.content, moments)
+    out["moments"] = moments
+    out["usage"] = {"input": resp.usage.prompt_tokens, "output": resp.usage.completion_tokens}
+    return out
