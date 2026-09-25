@@ -1,4 +1,7 @@
-from mmrag.eval import evaluate, first_hit_rank, secs
+import os
+import tempfile
+
+from mmrag.eval import evaluate, first_hit_rank, load_queries, secs
 
 
 def m(talk, start, end):
@@ -7,6 +10,19 @@ def m(talk, start, end):
 
 def test_secs():
     assert secs("2:33") == 153 and secs("153") == 153 and secs("0:05") == 5
+
+
+def test_load_queries_groups_windows_and_splits_dev_test():
+    with tempfile.TemporaryDirectory() as d:
+        path = os.path.join(d, "q.csv")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("id,question,talk_id,start,end,type\n"
+                    "a,Q a,PD8WGF,0:10,0:40,both\n"
+                    "a,Q a,PD8WGF,1:00,1:30,both\n"
+                    'b,"Q, with a comma",CB7MBQ,2:00,2:30,slide\n')
+        dev, test = load_queries(path, split="dev"), load_queries(path, split="test")
+    assert [q["id"] for q in dev] == ["a"] and dev[0]["windows"] == [("PD8WGF", 10, 40), ("PD8WGF", 60, 90)]
+    assert [q["question"] for q in test] == ["Q, with a comma"]
 
 
 def test_hit_needs_same_talk_and_overlap_within_tolerance():
