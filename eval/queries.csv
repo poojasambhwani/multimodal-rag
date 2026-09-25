@@ -1,29 +1,29 @@
 id,question,talk_id,start,end,type
-p1,Why did the team decide to develop Paddler rather than rely entirely on existing LLM hosting options?,PD8WGF,1:40,2:08,speech
-p2,What changed about Paddler's implementation after its original load-balancer design?,PD8WGF,4:27,4:56,speech
-p3,Why did the team want predictable deployments and backward compatibility?,PD8WGF,4:56,5:19,speech
+p1,Why did the team want to demonstrate that llama.cpp could work in production?,PD8WGF,1:40,2:08,speech
+p2,What changed about Paddler after it started as a load-balancing tool?,PD8WGF,4:27,4:56,speech
+p3,Why did the team need tighter control over deployment behavior and backward compatibility?,PD8WGF,4:56,5:19,speech
 p4,What deployment environments are illustrated for Paddler?,PD8WGF,2:54,3:32,slide
 p5,What information is shown in the Paddler administration interface?,PD8WGF,6:53,8:03,slide
-p6,What are the three main areas listed for Paddler's future development?,PD8WGF,10:02,10:53,slide
-p7,What advantages of self-hosting are highlighted for smaller specialized models?,PD8WGF,10:53,12:34,slide
-p8,What does the slide say Paddler is being used to build next?,PD8WGF,12:34,13:24,slide
-p9,What is the name of the static-analysis project built on top of Paddler?,PD8WGF,13:08,13:33,name
-p10,What research project did the team use when looking for a way to represent systems and applications?,PD8WGF,15:40,16:06,name
-p11,How does the team explain the role of self-hosting in Poet?,PD8WGF,14:00,14:52,both
-p11,How does the team explain the role of self-hosting in Poet?,PD8WGF,14:00,14:51,both
-p12,How does the presentation connect self-hosted models and grammars with improved model output?,PD8WGF,16:06,16:55,both
-p12,How does the presentation connect self-hosted models and grammars with improved model output?,PD8WGF,16:19,17:28,both
+p6,What three areas of future development are shown on the roadmap slide?,PD8WGF,10:02,10:53,slide
+p9,What is the name of the project built on top of Paddler that the speakers discuss next?,PD8WGF,13:08,13:33,name
+p10,What is the name of the research project the speakers mention for representing systems and applications?,PD8WGF,15:40,16:06,name
+p11,How does the presentation explain why self-hosted models are useful for Poet?,PD8WGF,14:00,14:26,both
+p11,How does the presentation explain why self-hosted models are useful for Poet?,PD8WGF,14:00,14:51,both
+p12,How does the presentation connect self-hosted models and grammars with better model output?,PD8WGF,16:06,16:55,both
+p12,How does the presentation connect self-hosted models and grammars with better model output?,PD8WGF,16:19,17:28,both
+p13,What does the slide with the hand-drawn rocket look like?,PD8WGF,15:40,16:06,visual
+p14,What does the slide with the house-and-llama drawing look like?,PD8WGF,5:36,5:59,visual
 n1,Why can't a conventional retrieval system simply provide the entire knowledge base to the language model?,NHNPMY,1:43,2:12,speech
 n2,Why can changing information over time create problems for ordinary retrieval systems?,NHNPMY,2:59,3:28,speech
 n3,What difficulty did the speaker encounter when trying to trace the source documents behind answers from Microsoft GraphRAG?,NHNPMY,6:18,6:48,speech
 n4,What does the slide show as the main stages of the GraphRAG approach?,NHNPMY,3:07,4:14,slide
-n5,What information is presented in the comparison of Microsoft GraphRAG's performance on the Christmas Carol corpus?,NHNPMY,6:46,7:54,slide
-n6,What are the different query categories presented for Microsoft GraphRAG?,NHNPMY,7:54,8:29,slide
 n7,How does the presentation compare the resource requirements of Microsoft GraphRAG and LlamaIndex on the test corpus?,NHNPMY,10:04,10:35,both
 n7,How does the presentation compare the resource requirements of Microsoft GraphRAG and LlamaIndex on the test corpus?,NHNPMY,10:05,10:35,both
-n8,How does the presentation demonstrate Graphiti's ability to handle information that changes over time?,NHNPMY,10:35,11:28,both
-n8,How does the presentation demonstrate Graphiti's ability to handle information that changes over time?,NHNPMY,11:28,11:54,both
+n8,How does the presentation explain Graphiti's handling of information that changes over time?,NHNPMY,10:35,11:28,both
+n8,How does the presentation explain Graphiti's handling of information that changes over time?,NHNPMY,10:58,11:28,both
 n9,What is the name of the benchmark mentioned for comparing GraphRAG systems?,NHNPMY,14:11,15:15,name
 n10,Which two additional open-source GraphRAG projects are listed near the end of the presentation?,NHNPMY,15:15,15:28,name
-n11,What does the slide showing the synthetic employee example contain besides the event data?,NHNPMY,11:54,12:53,visual
-n12,What does the final comparison slide communicate about the trade-off involved in using GraphRAG?,NHNPMY,15:28,16:03,visual
+n11,What does the slide showing the synthetic employee example contain besides the event data?,NHNPMY,11:54,12:53,slide
+n12,What does the final comparison slide communicate about the trade-off involved in using GraphRAG?,NHNPMY,15:28,16:03,slide
+n13,How is the slide with the synthetic employee history laid out visually?,NHNPMY,11:28,11:54,visual
+n14,What does the slide with the GraphRAG benchmark comparison look like?,NHNPMY,14:11,15:15,visual
