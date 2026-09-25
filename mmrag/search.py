@@ -2,13 +2,13 @@
 
 Scores from different embedding models aren't comparable (on this corpus CLIP cosines sit
 around 0.2-0.35, bge around 0.55-0.8), so ranked lists are fused by position with Reciprocal
-Rank Fusion. Hits in the same talk whose time ranges overlap are merged into one moment.
+Rank Fusion.
 """
 SOURCES = ("speech", "slide_text", "slide_clip")
 RRF_K = 60  # the standard RRF constant: softens the gap between rank 1 and rank 2
 
 
-def retrieve(query, source, n=20):
+def retrieve(query, source, n=10):
     """Top-n hits from one index, as dicts: talk_id, title, start, end, text, source, rank."""
     import pixeltable as pxt  # imported here so fuse() can be tested without pixeltable
 
@@ -24,38 +24,39 @@ def retrieve(query, source, n=20):
     return [dict(row, source=source, rank=i + 1) for i, row in enumerate(df.to_dict("records"))]
 
 
+def _overlaps(a, b):
+    return a["talk_id"] == b["talk_id"] and a["start"] < b["end"] and b["start"] < a["end"]
+
+
 def fuse(hit_lists, k=5, rrf_k=RRF_K):
-    """Merge ranked hit lists into the top-k moments.
+    """Rank individual hits (one speech chunk or one slide scene) and return the top-k moments.
 
-    Each hit is worth 1 / (rrf_k + rank). Hits in the same talk whose time ranges overlap merge
-    into one moment (ranges that only touch don't, or contiguous speech chunks would chain into
-    one). Within a moment each source counts once, via its best hit, so a long slide scene isn't
-    rewarded just for overlapping several speech chunks.
+    A hit scores 1 / (rrf_k + rank), plus, for each *other* index, the best such score among that
+    index's hits overlapping it in time. Hits are never merged into longer spans (an earlier
+    version did, and overlapping chunks and slides chained into multi-minute "moments"). A hit
+    overlapping an already-chosen result is skipped, so the top-k are distinct moments.
     """
-    hits = sorted((h for hl in hit_lists for h in hl), key=lambda h: (h["talk_id"], h["start"]))
-    moments = []
+    hits = [dict(h, rrf=1 / (rrf_k + h["rank"])) for hl in hit_lists for h in hl]
     for h in hits:
-        m = moments[-1] if moments else None
-        if m and m["talk_id"] == h["talk_id"] and h["start"] < m["end"]:
-            m["end"] = max(m["end"], h["end"])
-            m["hits"].append(h)
-        else:
-            moments.append({"talk_id": h["talk_id"], "title": h.get("title"),
-                            "start": h["start"], "end": h["end"], "hits": [h]})
+        support = {}  # other source -> its best hit overlapping h
+        for o in hits:
+            if o["source"] != h["source"] and _overlaps(h, o) and o["rrf"] > support.get(o["source"], {"rrf": 0})["rrf"]:
+                support[o["source"]] = o
+        h["score"] = h["rrf"] + sum(o["rrf"] for o in support.values())
+        h["sources"] = sorted([h["source"], *support])
+        h["texts"] = {h["source"]: h["text"], **{s: o["text"] for s, o in support.items()}}
 
-    for m in moments:
-        best = {}  # source -> (score, hit)
-        for h in m.pop("hits"):
-            s = 1 / (rrf_k + h["rank"])
-            if s > best.get(h["source"], (0.0, None))[0]:
-                best[h["source"]] = (s, h)
-        m["score"] = sum(s for s, _ in best.values())
-        m["sources"] = sorted(best)
-        m["anchor"] = max(best.values(), key=lambda b: b[0])[1]["start"]  # where a citation link jumps to
-        m["texts"] = {src: h["text"] for src, (_, h) in best.items()}
-    return sorted(moments, key=lambda m: m["score"], reverse=True)[:k]
+    chosen = []
+    for h in sorted(hits, key=lambda h: h["score"], reverse=True):  # stable: on ties, speech (listed first) wins
+        if not any(_overlaps(h, c) for c in chosen):
+            chosen.append(h)
+            if len(chosen) == k:
+                break
+    return [{"talk_id": h["talk_id"], "title": h.get("title"), "start": h["start"], "end": h["end"],
+             "anchor": h["start"], "score": h["score"], "sources": h["sources"], "texts": h["texts"]}
+            for h in chosen]
 
 
-def search(query, k=5, n=20, sources=SOURCES):
-    """Top-k moments for a question. `sources` selects indexes (used for ablations in evaluation)."""
-    return fuse([retrieve(query, s, n) for s in sources], k=k)
+def search(query, k=5, n=10, sources=SOURCES, rrf_k=RRF_K):
+    """Top-k moments for a question. `sources`, `n` and `rrf_k` are exposed for evaluation."""
+    return fuse([retrieve(query, s, n) for s in sources], k=k, rrf_k=rrf_k)
