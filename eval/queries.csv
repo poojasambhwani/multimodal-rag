@@ -27,3 +27,9 @@ n11,What does the slide showing the synthetic employee example contain besides t
 n12,What does the final comparison slide communicate about the trade-off involved in using GraphRAG?,NHNPMY,15:28,16:03,slide
 n13,How is the slide with the synthetic employee history laid out visually?,NHNPMY,11:28,11:54,visual
 n14,What does the slide with the GraphRAG benchmark comparison look like?,NHNPMY,14:11,15:15,visual
+u1,In what year was A Christmas Carol first published?,,,,unanswerable
+u2,How much does a Paddler enterprise license cost?,,,,unanswerable
+u3,Who wrote A Christmas Carol?,,,,unanswerable
+u4,What programming language is llama.cpp primarily written in?,,,,unanswerable
+u5,How many production deployments of Paddler were reported in the talk?,,,,unanswerable
+u6,What is the capital of Australia?,,,,unanswerable

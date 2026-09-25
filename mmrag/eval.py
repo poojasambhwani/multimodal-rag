@@ -26,7 +26,8 @@ def load_queries(path=QUERIES_CSV, split=None):
     with open(path, newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
             q = by_id.setdefault(r["id"], {"id": r["id"], "question": r["question"], "type": r["type"], "windows": []})
-            q["windows"].append((r["talk_id"], secs(r["start"]), secs(r["end"])))
+            if r["talk_id"]:  # unanswerable (trap) questions have no window
+                q["windows"].append((r["talk_id"], secs(r["start"]), secs(r["end"])))
     queries = list(by_id.values())
     if split:
         queries = [q for q in queries if all(t in DEV_TALKS for t, _, _ in q["windows"]) == (split == "dev")]
@@ -43,8 +44,8 @@ def first_hit_rank(moments, windows, tol=15):
 
 def evaluate(search_fn, queries, ks=(1, 5, 10), tol=15):
     """search_fn(question) -> ranked moments (at least max(ks) of them). Returns
-    {"all": {...}, <type>: {...}} with recall@k, MRR and n for each group."""
-    ranks = [(q["type"], first_hit_rank(search_fn(q["question"]), q["windows"], tol)) for q in queries]
+    {"all": {...}, <type>: {...}} with recall@k, MRR and n for each group. Trap questions are skipped."""
+    ranks = [(q["type"], first_hit_rank(search_fn(q["question"]), q["windows"], tol)) for q in queries if q["windows"]]
 
     def summarize(rs):
         out = {f"R@{k}": sum(1 for r in rs if r and r <= k) / len(rs) for k in ks}
@@ -56,3 +57,36 @@ def evaluate(search_fn, queries, ks=(1, 5, 10), tol=15):
     for t in sorted({t for t, _ in ranks}):
         result[t] = summarize([r for tt, r in ranks if tt == t])
     return result
+
+
+def evaluate_answers(answer_fn, queries, tol=15):
+    """answer_fn(question) -> mmrag.answer.answer() output. Returns (summary, per-question rows).
+
+    For answerable questions: was a correct moment in the context, did the model answer, and did it
+    cite a correct moment? A refusal while a correct moment *was* in the context is a false refusal.
+    For trap questions (no window): did the model refuse?
+    """
+    rows = []
+    for q in queries:
+        r, w = answer_fn(q["question"]), q["windows"]
+        rows.append({"id": q["id"], "type": q["type"], "status": r["status"],
+                     "in_context": bool(w) and first_hit_rank(r["moments"], w, tol) is not None,
+                     "cited_correct": bool(w) and first_hit_rank(r["citations"], w, tol) is not None,
+                     "cost": r["cost"], "answer": r["answer"]})
+
+    def mean(xs):
+        return sum(xs) / len(xs) if xs else float("nan")
+
+    answerable = [x for x, q in zip(rows, queries) if q["windows"]]
+    traps = [x for x, q in zip(rows, queries) if not q["windows"]]
+    summary = {
+        "context hit": mean([x["in_context"] for x in answerable]),
+        "answered": mean([x["status"] == "OK" for x in answerable]),
+        "cited correct": mean([x["status"] == "OK" and x["cited_correct"] for x in answerable]),
+        "false refusals": mean([x["status"] != "OK" for x in answerable if x["in_context"]]),
+        "trap refusals": mean([x["status"] == "INSUFFICIENT_CONTEXT" for x in traps]),
+        "cost per answer": mean([x["cost"] for x in rows]),
+        "n": len(answerable),
+        "n traps": len(traps),
+    }
+    return summary, rows

@@ -8,6 +8,7 @@ from mmrag.search import search
 
 CORPUS_CSV = Path(__file__).resolve().parent.parent / "corpus.csv"
 MODEL = "gpt-4o-mini"
+PRICE_IN, PRICE_OUT = 0.15e-6, 0.60e-6  # gpt-4o-mini list price per token when written; check before relying on it
 
 SYSTEM_PROMPT = """You answer questions about recorded conference talks using ONLY the numbered context moments.
 Each moment gives what the speaker said and/or the slide on screen (its text and a description).
@@ -58,8 +59,8 @@ def parse_reply(content, moments):
     return {"status": reply.get("status", "ERROR"), "answer": reply.get("answer", ""), "citations": citations}
 
 
-def answer(question, k=10, client=None):
-    """Retrieve the top-k moments, ask the model, return the parsed reply plus the moments and token usage."""
+def answer(question, k=10, client=None, system_prompt=SYSTEM_PROMPT):
+    """Retrieve the top-k moments, ask the model, return the parsed reply plus the moments, usage and cost."""
     from openai import OpenAI  # imported here so the pure functions above are testable without it
 
     moments = search(question, k=k)
@@ -68,11 +69,12 @@ def answer(question, k=10, client=None):
         temperature=0,
         response_format={"type": "json_object"},
         messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"Context moments:\n\n{build_context(moments)}\n\nQuestion: {question}"},
         ],
     )
     out = parse_reply(resp.choices[0].message.content, moments)
     out["moments"] = moments
     out["usage"] = {"input": resp.usage.prompt_tokens, "output": resp.usage.completion_tokens}
+    out["cost"] = resp.usage.prompt_tokens * PRICE_IN + resp.usage.completion_tokens * PRICE_OUT
     return out
