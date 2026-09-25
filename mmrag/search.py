@@ -7,18 +7,18 @@ SOURCES = ("speech", "slide_text")
 RRF_K = 60  # the standard RRF constant: softens the gap between rank 1 and rank 2
 
 
-def retrieve(query, source, n=10):
-    """Top-n hits from one index, as dicts: talk_id, title, start, end, text, source, rank."""
+def retrieve(query, source, n=10, vec=None):
+    """Top-n hits from one index, as dicts: talk_id, title, start, end, text, source, rank.
+    vec: a precomputed query embedding (e.g. from an ONNX encoder); if None, the index's own model embeds it."""
     import pixeltable as pxt  # imported here so fuse() can be tested without pixeltable
 
     if source == "speech":
         t = pxt.get_table("mmrag.audio_chunks")
-        sim = t.text.similarity(string=query)
-        cols = dict(start=t.segment_start, end=t.segment_end, text=t.text)
+        col, cols = t.text, dict(start=t.segment_start, end=t.segment_end, text=t.text)
     else:
         t = pxt.get_table("mmrag.keyframes")
-        sim = t.slide_doc.similarity(string=query)
-        cols = dict(start=t.start_time, end=t.start_time + t.duration, text=t.slide_doc)
+        col, cols = t.slide_doc, dict(start=t.start_time, end=t.start_time + t.duration, text=t.slide_doc)
+    sim = col.similarity(string=query) if vec is None else col.similarity(vector=vec)
     df = t.order_by(sim, asc=False).limit(n).select(t.talk_id, t.title, **cols).collect().to_pandas()
     return [dict(row, source=source, rank=i + 1) for i, row in enumerate(df.to_dict("records"))]
 
@@ -56,6 +56,8 @@ def fuse(hit_lists, k=5, rrf_k=RRF_K):
             for h in chosen]
 
 
-def search(query, k=5, n=10, sources=SOURCES, rrf_k=RRF_K):
-    """Top-k moments for a question. `sources`, `n` and `rrf_k` are exposed for evaluation."""
-    return fuse([retrieve(query, s, n) for s in sources], k=k, rrf_k=rrf_k)
+def search(query, k=5, n=10, sources=SOURCES, rrf_k=RRF_K, encode=None):
+    """Top-k moments for a question. `sources`, `n` and `rrf_k` are exposed for evaluation.
+    encode: optional text -> vector function (both indexes use the same model, so it runs once)."""
+    vec = encode(query) if encode else None
+    return fuse([retrieve(query, s, n, vec) for s in sources], k=k, rrf_k=rrf_k)
