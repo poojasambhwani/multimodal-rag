@@ -2,12 +2,14 @@
 
 Only the *query* side changes; the stored chunk and slide embeddings stay as they are.
 """
+from pathlib import Path
+
 MODEL_ID = "BAAI/bge-small-en-v1.5"
 
 
 def export_onnx(out_dir, qconfig):
     """Save an fp32 ONNX copy of the model to out_dir, plus a dynamically quantized INT8 one
-    (onnx/model_qint8_<qconfig>.onnx). qconfig: "avx2", "avx512", "avx512_vnni" or "arm64"."""
+    (onnx/model_{qint8|quint8}_<qconfig>.onnx). qconfig: "avx2", "avx512", "avx512_vnni" or "arm64"."""
     from sentence_transformers import SentenceTransformer, export_dynamic_quantized_onnx_model
 
     model = SentenceTransformer(MODEL_ID, backend="onnx")
@@ -22,9 +24,11 @@ def load_encoder(kind, onnx_dir=None, qconfig=None):
     if kind == "torch":
         model = SentenceTransformer(MODEL_ID, backend="torch")
     elif kind == "onnx":
-        model = SentenceTransformer(onnx_dir, backend="onnx")
+        model = SentenceTransformer(onnx_dir, backend="onnx", model_kwargs={"file_name": "onnx/model.onnx"})
     elif kind == "onnx-int8":
-        model = SentenceTransformer(onnx_dir, backend="onnx", model_kwargs={"file_name": f"onnx/model_qint8_{qconfig}.onnx"})
+        # signed (qint8) or unsigned (quint8) depending on the quantization config, e.g. avx2 -> quint8
+        int8 = next(Path(onnx_dir, "onnx").glob(f"model_q*int8_{qconfig}.onnx"))
+        model = SentenceTransformer(onnx_dir, backend="onnx", model_kwargs={"file_name": f"onnx/{int8.name}"})
     else:
         raise ValueError(f"unknown encoder kind: {kind}")
     return model.encode
