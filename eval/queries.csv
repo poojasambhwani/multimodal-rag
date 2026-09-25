@@ -16,7 +16,7 @@ p14,What does the slide with the house-and-llama drawing look like?,PD8WGF,16:19
 n1,Why can't a conventional retrieval system simply provide the entire knowledge base to the language model?,NHNPMY,1:43,2:12,speech
 n2,Why can changing information over time create problems for ordinary retrieval systems?,NHNPMY,2:59,3:28,speech
 n3,What difficulty did the speaker encounter when trying to trace the source documents behind answers from Microsoft GraphRAG?,NHNPMY,6:18,6:48,speech
-n4,What does the slide show as the main stages of the GraphRAG approach?,NHNPMY,3:07,4:14,slide
+n4,What does the slide show as the main stages of the GraphRAG approach?,NHNPMY,5:12,6:46,slide
 n7,How does the presentation compare the resource requirements of Microsoft GraphRAG and LlamaIndex on the test corpus?,NHNPMY,10:04,10:35,both
 n7,How does the presentation compare the resource requirements of Microsoft GraphRAG and LlamaIndex on the test corpus?,NHNPMY,10:05,10:35,both
 n8,How does the presentation explain Graphiti's handling of information that changes over time?,NHNPMY,10:35,11:28,both
@@ -27,9 +27,10 @@ n11,What does the slide showing the synthetic employee example contain besides t
 n12,What does the final comparison slide communicate about the trade-off involved in using GraphRAG?,NHNPMY,15:28,16:03,slide
 n13,How is the slide with the synthetic employee history laid out visually?,NHNPMY,11:28,11:54,visual
 n14,What does the slide with the GraphRAG benchmark comparison look like?,NHNPMY,14:11,15:15,visual
+n15,Who wrote A Christmas Carol?,NHNPMY,4:54,5:12,name
 u1,In what year was A Christmas Carol first published?,,,,unanswerable
 u2,How much does a Paddler enterprise license cost?,,,,unanswerable
-u3,Who wrote A Christmas Carol?,,,,unanswerable
+u3,How many customers were using Paddler in production at the time of the talk?,,,,unanswerable
 u4,What programming language is llama.cpp primarily written in?,,,,unanswerable
 u5,How many production deployments of Paddler were reported in the talk?,,,,unanswerable
 u6,What is the capital of Australia?,,,,unanswerable
