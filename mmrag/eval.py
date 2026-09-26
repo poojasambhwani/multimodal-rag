@@ -20,17 +20,22 @@ def secs(t):
 
 
 def load_queries(path=QUERIES_CSV, split=None):
-    """-> [{id, question, type, windows: [(talk_id, start, end), ...]}, ...]
-    split: "dev" (all windows on DEV_TALKS), "test" (the rest) or None (every question)."""
+    """-> [{id, question, type, talks, windows: [(talk_id, start, end), ...]}, ...]
+    Unanswerable (trap) questions have no start/end, so no window; a trap may still name a talk,
+    which decides its split. split: "dev" (all talks in DEV_TALKS; traps naming no talk count as
+    dev), "test" (the rest) or None (every question)."""
     by_id = {}
     with open(path, newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
-            q = by_id.setdefault(r["id"], {"id": r["id"], "question": r["question"], "type": r["type"], "windows": []})
-            if r["talk_id"]:  # unanswerable (trap) questions have no window
+            q = by_id.setdefault(r["id"], {"id": r["id"], "question": r["question"], "type": r["type"],
+                                           "talks": set(), "windows": []})
+            if r["talk_id"]:
+                q["talks"].add(r["talk_id"])
+            if r["start"]:
                 q["windows"].append((r["talk_id"], secs(r["start"]), secs(r["end"])))
     queries = list(by_id.values())
     if split:
-        queries = [q for q in queries if all(t in DEV_TALKS for t, _, _ in q["windows"]) == (split == "dev")]
+        queries = [q for q in queries if all(t in DEV_TALKS for t in q["talks"]) == (split == "dev")]
     return queries
 
 

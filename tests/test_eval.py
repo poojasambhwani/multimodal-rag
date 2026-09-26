@@ -20,11 +20,12 @@ def test_load_queries_groups_windows_and_splits_dev_test():
                     "a,Q a,PD8WGF,0:10,0:40,both\n"
                     "a,Q a,PD8WGF,1:00,1:30,both\n"
                     'b,"Q, with a comma",CB7MBQ,2:00,2:30,slide\n'
-                    "u,Unanswerable?,,,,unanswerable\n")
+                    "u,Unanswerable?,,,,unanswerable\n"
+                    "t,Unanswerable about a test talk?,CB7MBQ,,,unanswerable\n")
         dev, test = load_queries(path, split="dev"), load_queries(path, split="test")
     assert [q["id"] for q in dev] == ["a", "u"] and dev[0]["windows"] == [("PD8WGF", 10, 40), ("PD8WGF", 60, 90)]
     assert dev[1]["windows"] == []
-    assert [q["question"] for q in test] == ["Q, with a comma"]
+    assert [q["id"] for q in test] == ["b", "t"] and test[1]["windows"] == []  # a trap naming a test talk is test
 
 
 def test_hit_needs_same_talk_and_overlap_within_tolerance():
