@@ -4,7 +4,7 @@ Only the *query* side changes; the stored chunk and slide embeddings stay as the
 """
 from pathlib import Path
 
-MODEL_ID = "BAAI/bge-small-en-v1.5"
+from mmrag.pipeline import EMBED_MODEL  # queries must be embedded with the model the indexes were built with
 
 
 def export_onnx(out_dir, qconfig):
@@ -12,7 +12,7 @@ def export_onnx(out_dir, qconfig):
     (onnx/model_{qint8|quint8}_<qconfig>.onnx). qconfig: "avx2", "avx512", "avx512_vnni" or "arm64"."""
     from sentence_transformers import SentenceTransformer, export_dynamic_quantized_onnx_model
 
-    model = SentenceTransformer(MODEL_ID, backend="onnx")
+    model = SentenceTransformer(EMBED_MODEL, backend="onnx")
     model.save_pretrained(out_dir)  # the quantizer only writes the .onnx file, so config + tokenizer must be there first
     export_dynamic_quantized_onnx_model(model, qconfig, out_dir)
 
@@ -22,7 +22,7 @@ def load_encoder(kind, onnx_dir=None, qconfig=None):
     from sentence_transformers import SentenceTransformer
 
     if kind == "torch":
-        model = SentenceTransformer(MODEL_ID, backend="torch")
+        model = SentenceTransformer(EMBED_MODEL, backend="torch")
     elif kind == "onnx":
         model = SentenceTransformer(onnx_dir, backend="onnx", model_kwargs={"file_name": "onnx/model.onnx"})
     elif kind == "onnx-int8":

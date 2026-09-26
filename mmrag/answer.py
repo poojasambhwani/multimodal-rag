@@ -1,12 +1,9 @@
 """Grounded answers: GPT-4o-mini answers only from the retrieved moments and cites them by number."""
-import csv
 import json
-from functools import cache
-from pathlib import Path
 
+from mmrag.pipeline import corpus
 from mmrag.search import search
 
-CORPUS_CSV = Path(__file__).resolve().parent.parent / "corpus.csv"
 MODEL = "gpt-4o-mini"
 PRICE_IN, PRICE_OUT = 0.15e-6, 0.60e-6  # gpt-4o-mini list price per token when written; check before relying on it
 
@@ -17,12 +14,6 @@ Rules:
 - Cite the moment numbers that support the answer.
 - If the context does not contain the answer, set status to INSUFFICIENT_CONTEXT and say briefly what is missing.
 Reply with a JSON object: {"status": "OK" or "INSUFFICIENT_CONTEXT", "answer": "...", "citations": [moment numbers]}"""
-
-
-@cache
-def video_url(talk_id):
-    with open(CORPUS_CSV, newline="", encoding="utf-8") as f:
-        return {r["id"]: r["video_url"] for r in csv.DictReader(f)}[talk_id]
 
 
 def mmss(t):
@@ -55,7 +46,7 @@ def parse_reply(content, moments):
     for n in dict.fromkeys(nums):  # de-duplicate, keep order
         m = moments[n - 1]
         citations.append({"n": n, "talk_id": m["talk_id"], "title": m["title"], "start": m["start"], "end": m["end"],
-                          "url": f'{video_url(m["talk_id"])}#t={int(m["anchor"])}'})
+                          "url": f'{corpus()[m["talk_id"]]["video_url"]}#t={int(m["anchor"])}'})
     return {"status": reply.get("status", "ERROR"), "answer": reply.get("answer", ""), "citations": citations}
 
 
